@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Кликер с сохранением</title>
+    <style>
+        body { background: #8b3e2b; text-align: center; padding: 50px; font-family: Arial; }
+        .score { background: #fde9d4; padding: 20px; font-size: 50px; margin: 20px; border-radius: 30px; }
+        .clicker { font-size: 200px; cursor: pointer; filter: drop-shadow(0 20px 10px #2f140b); }
+        .clicker:active { transform: scale(0.9); }
+        .save-status { color: #ffddbb; margin: 10px; }
+        button { background: #d6a870; border: none; padding: 15px 30px; font-size: 20px; margin: 5px; border-radius: 30px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="score" id="scoreDisplay">0</div>
+    <div class="clicker" id="clicker">🥧</div>
+    <div>
+        <button id="borschtBtn">Купить Борщ (×2) - 5000</button>
+        <button id="pieBtn">Купить Пирожок (×5) - 40000</button>
+    </div>
+    <div>
+        <button id="resetBtn" style="background: #a66d49;">🔄 Сброс</button>
+    </div>
+    <div class="save-status" id="saveStatus">⚡ Загрузка...</div>
+
+    <script>
+        let clicks = 0;
+        let borscht = false;
+        let pie = false;
+        
+        const scoreEl = document.getElementById('scoreDisplay');
+        const clickerEl = document.getElementById('clicker');
+        const statusEl = document.getElementById('saveStatus');
+
+        // Загрузка
+        function loadGame() {
+            let saved = localStorage.getItem('clickerSave');
+            if (saved) {
+                try {
+                    let data = JSON.parse(saved);
+                    clicks = data.clicks || 0;
+                    borscht = data.borscht || false;
+                    pie = data.pie || false;
+                    statusEl.innerHTML = '✅ Загружено';
+                } catch(e) {
+                    statusEl.innerHTML = '❌ Ошибка загрузки';
+                }
+            } else {
+                statusEl.innerHTML = '🆕 Новая игра';
+            }
+            updateDisplay();
+        }
+
+        // Сохранение
+        function saveGame() {
+            let data = {
+                clicks: clicks,
+                borscht: borscht,
+                pie: pie
+            };
+            localStorage.setItem('clickerSave', JSON.stringify(data));
+            statusEl.innerHTML = '💾 Сохранено ' + new Date().toLocaleTimeString();
+        }
+
+        // Обновление экрана
+        function updateDisplay() {
+            scoreEl.innerText = clicks;
+            
+            if (pie) {
+                clickerEl.innerText = '🥧';
+            } else if (borscht) {
+                clickerEl.innerText = '🍲';
+            } else {
+                clickerEl.innerText = '🥧';
+            }
+            
+            // Кнопки
+            document.getElementById('borschtBtn').disabled = borscht || pie;
+            document.getElementById('pieBtn').disabled = pie;
+        }
+
+        // Клик
+        clickerEl.onclick = function() {
+            let mult = pie ? 5 : (borscht ? 2 : 1);
+            clicks += mult;
+            updateDisplay();
+            saveGame();
+        };
+
+        // Покупки
+        document.getElementById('borschtBtn').onclick = function() {
+            if (clicks >= 5000 && !borscht && !pie) {
+                clicks -= 5000;
+                borscht = true;
+                updateDisplay();
+                saveGame();
+            } else {
+                alert('Не хватает кликов или уже куплено');
+            }
+        };
+
+        document.getElementById('pieBtn').onclick = function() {
+            if (clicks >= 40000 && !pie) {
+                clicks -= 40000;
+                pie = true;
+                updateDisplay();
+                saveGame();
+            } else {
+                alert('Не хватает кликов');
+            }
+        };
+
+        // Сброс
+        document.getElementById('resetBtn').onclick = function() {
+            if (confirm('Сбросить весь прогресс?')) {
+                clicks = 0;
+                borscht = false;
+                pie = false;
+                localStorage.removeItem('clickerSave');
+                updateDisplay();
+                statusEl.innerHTML = '🔄 Сброшено';
+            }
+        };
+
+        // Старт
+        loadGame();
+    </script>
+</body>
+</html>
